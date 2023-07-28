@@ -55,7 +55,7 @@ class RadianceMethod:
 
         return np.array(roi_dark_values), np.array(roi_light_values)
 
-    def process_image_data(self):
+    def process_image_data(self): #test comment
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images+1)
         print(f"Processing {self.last_image_id-self.first_image_id} images...")
         for channel in [0,1,2]:
