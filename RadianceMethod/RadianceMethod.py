@@ -2,6 +2,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
+import exifread
+from datetime import datetime
+
 
 import csv
 from tqdm import tqdm
@@ -22,16 +25,29 @@ class RadianceMethod:
         self.dark_roi_real_bounds = None
         self.light_roi_real_bounds = None
         self.number_of_rois = None
-        self.roi_pixel_width = 10
-        self.experiment_name = 'test'
+        self.roi_pixel_width = None
+        self.experiment_name = None
 
     def set_image_series(self, first_image_id, last_image_id, image_name_string, skip_n_images=0):
         self.first_image_id = first_image_id
         self.last_image_id = last_image_id
         self.skip_n_images = skip_n_images
         self.image_name_string = image_name_string
+        
+    def set_reference_image_id(self, reference_image_id):
+        self.reference_image_id = reference_image_id
 
-    def set_roi_pixel_bounds(self):
+    def set_roi_pixel_bounds(self, dark_roi_pixel_bounds, light_roi_pixel_bounds, roi_pixel_width):
+        self.dark_roi_pixel_bounds = dark_roi_pixel_bounds
+        self.light_roi_pixel_bounds = light_roi_pixel_bounds
+        self.roi_pixel_width = roi_pixel_width
+        
+    def set_roi_real_bounds(self, dark_roi_real_bounds, light_roi_real_bounds):
+        self.dark_roi_real_bounds = dark_roi_real_bounds
+        self.light_roi_real_bounds = light_roi_real_bounds
+
+    def set_experiment_name(self, experiment_name):
+        self.experiment_name = experiment_name
 
 
 
@@ -48,10 +64,14 @@ class RadianceMethod:
             self.light_roi_real_bounds[0], self.light_roi_real_bounds[1], self.number_of_rois)
 
     def get_image_data(self, image_id, channel='all'):
-        filename = self.image_name_string.format(image_id)
-        file_path = os.path.join(self.image_dir, filename)
+        file_path = self._get_image_file_path(image_id)
         image_array = _get_channel_arrays_from_jpg_file(file_path, channel)
         return image_array
+
+    def _get_image_file_path(self, image_id):
+        filename = self.image_name_string.format(image_id)
+        file_path = os.path.join(self.image_dir, filename)
+        return file_path
 
     def _extract_pixel_values(self, image_array):# TODO: outsource in single function
         roi_dark_values = []
@@ -75,7 +95,7 @@ class RadianceMethod:
             roi_mean = roi.mean()
             roi_light_values.append(roi_mean)
 
-        return np.array(roi_dark_values), np.array(roi_light_values)
+        return roi_dark_values, roi_light_values
 
     def process_image_data(self):
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images+1)
@@ -88,14 +108,19 @@ class RadianceMethod:
                 writer_1 = csv.writer(csvfile_1)
                 writer_2 = csv.writer(csvfile_2)
 
-                header = [f"ROI {i}" for i in range(self.number_of_rois)]
+                header = ["Time","Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
                 writer_1.writerow(header)
                 writer_2.writerow(header)
                 for image_id in tqdm(self.image_series):
                     image_array = self.get_image_data(image_id, channel)
+                    image_file_path = self._get_image_file_path(image_id)
+                    capture_time = get_capture_date_time(image_file_path)
+                    timedelta = None
+                    print(capture_time)
+
                     roi_dark_values, roi_light_values = self._extract_pixel_values(image_array)
-                    writer_1.writerow(roi_dark_values)
-                    writer_2.writerow(roi_light_values)
+                    writer_1.writerow([capture_time, timedelta] + roi_dark_values)
+                    writer_2.writerow([capture_time, timedelta] + roi_light_values)
                 print(f"Channel {channel} processed!")
 
 
@@ -113,8 +138,8 @@ class RadianceMethod:
             rect_light = draw_roi(roi_light[0], roi_light[1], self.roi_pixel_width, self.light_roi_dy, 'blue', label)
             ax.add_patch(rect_dark)
             ax.add_patch(rect_light)
-            ax.text(roi_dark[0] - 0.5*self.roi_pixel_width, roi_dark[1], i, fontsize=0.1, color = 'red', horizontalalignment='right')
-            ax.text(roi_light[0] - 0.5*self.roi_pixel_width, roi_light[1], i, fontsize=0.1, color = 'blue', horizontalalignment='right')
+            ax.text(roi_dark[0], roi_dark[1], i, fontsize=0.1, color = 'red', horizontalalignment='right')
+            ax.text(roi_light[0], roi_light[1], i, fontsize=0.1, color = 'blue', horizontalalignment='right')
         plt.legend()
         plt.savefig("ROIs.pdf")
 
@@ -161,3 +186,17 @@ def _get_channel_arrays_from_jpg_file(file, channel):
         return channel_array
     return channel_array[:, :, channel]
 
+
+def get_exif_entry(filename, tag):
+    with open(filename, 'rb') as f:
+        exif = exifread.process_file(f, details=False, stop_tag=tag)
+        if f"EXIF {tag}" not in exif:
+            raise ValueError("No EXIF entry")
+        exif_entry = exif[f"EXIF {tag}"]
+    return str(exif_entry)
+
+def get_capture_date_time(file):
+    capture_time = get_exif_entry(file, "DateTimeOriginal")
+    #TODO: Remove fake time miliseconds
+    return datetime.strptime(capture_time, '%Y:%m:%d %H:%M:%S')
+    # return datetime.strptime(capture_time + f".{random.randint(0, 999)}", '%Y:%m:%d %H:%M:%S.%f')
