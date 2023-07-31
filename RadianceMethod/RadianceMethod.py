@@ -24,6 +24,7 @@ class RadianceMethod:
         self.light_roi_pixel_bounds = None
         self.dark_roi_real_bounds = None
         self.light_roi_real_bounds = None
+        self.camera_real_position = None
         self.number_of_rois = None
         self.roi_pixel_width = None
         self.experiment_name = None
@@ -48,6 +49,9 @@ class RadianceMethod:
 
     def set_experiment_name(self, experiment_name):
         self.experiment_name = experiment_name
+
+    def set_camera_position(self, x, y, z):
+        self.camera_real_position = (x,y,z)
 
 
 
@@ -111,16 +115,20 @@ class RadianceMethod:
                 header = ["Time","Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
                 writer_1.writerow(header)
                 writer_2.writerow(header)
+
+                reference_image_file_path = self._get_image_file_path(self.reference_image_id)
+                reference_image_capture_time = get_capture_date_time(reference_image_file_path)
+
                 for image_id in tqdm(self.image_series):
                     image_array = self.get_image_data(image_id, channel)
                     image_file_path = self._get_image_file_path(image_id)
                     capture_time = get_capture_date_time(image_file_path)
-                    timedelta = None
+                    time_delta = capture_time - reference_image_capture_time
                     print(capture_time)
 
                     roi_dark_values, roi_light_values = self._extract_pixel_values(image_array)
-                    writer_1.writerow([capture_time, timedelta] + roi_dark_values)
-                    writer_2.writerow([capture_time, timedelta] + roi_light_values)
+                    writer_1.writerow([capture_time, time_delta] + roi_dark_values)
+                    writer_2.writerow([capture_time, time_delta] + roi_light_values)
                 print(f"Channel {channel} processed!")
 
 
