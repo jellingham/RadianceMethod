@@ -1,6 +1,6 @@
-from RadianceMethod import RadianceMethod
+from RadianceMethod.processing.DataExtractor import DataExtractor
 
-test = RadianceMethod()
+test = DataExtractor()
 test.set_experiment_name("Testexperiment")
 test.set_image_dir('/Users/kristianboerger/repos/RadianceMethod/test_images')
 test.set_results_dir('/Users/kristianboerger/repos/RadianceMethod/test_results')
