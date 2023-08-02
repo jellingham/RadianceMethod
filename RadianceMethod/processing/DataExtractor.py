@@ -7,7 +7,7 @@ import csv
 from tqdm import tqdm
 
 from RadianceMethod.helper_functions.distance_calculations import _calc_distance_3d, _divide_line_2d, _divide_line_3d
-from RadianceMethod.helper_functions.image_reading import _get_capture_date_time, _get_channel_arrays_from_jpg_file
+from RadianceMethod.helper_functions.image_reading import get_capture_date_time, get_channel_arrays_from_jpg_file, get_channel_arrays_from_raw_file
 
 
 class DataExtractor:
@@ -15,6 +15,7 @@ class DataExtractor:
         self.dark_roi_pixel_dy = None
         self.dark_roi_real_dx = None
         self.image_dir = None
+        self.image_file_format = 'jpg'
         self.results_dir = None
         self.reference_image_id = None
         self.first_image_id = None
@@ -46,6 +47,9 @@ class DataExtractor:
 
     def set_image_dir(self, image_dir):
         self.image_dir = image_dir
+
+    def set_image_file_format(self, image_file_format):
+        self.image_file_format = image_file_format
 
     def set_results_dir(self, results_dir):
         self.results_dir = results_dir
@@ -102,7 +106,10 @@ class DataExtractor:
 
     def _get_image_data(self, image_id, channel):
         file_path = self._get_image_file_path(image_id)
-        image_array = _get_channel_arrays_from_jpg_file(file_path, channel)
+        if self.image_file_format == 'jpg':
+            image_array = get_channel_arrays_from_jpg_file(file_path, channel)
+        if self.image_file_format == 'raw':
+            image_array = get_channel_arrays_from_raw_file(file_path, channel)
         return image_array
 
     def _get_image_file_path(self, image_id):
@@ -172,12 +179,12 @@ class DataExtractor:
                 print(file_2_path, "written!")
 
                 reference_image_file_path = self._get_image_file_path(self.reference_image_id)
-                reference_image_capture_time = _get_capture_date_time(reference_image_file_path)
+                reference_image_capture_time = get_capture_date_time(reference_image_file_path)
 
                 for image_id in tqdm(self.image_series):
                     image_array = self._get_image_data(image_id, channel)
                     image_file_path = self._get_image_file_path(image_id)
-                    capture_time = _get_capture_date_time(image_file_path)
+                    capture_time = get_capture_date_time(image_file_path)
                     time_delta = capture_time - reference_image_capture_time
 
                     roi_dark_values, roi_light_values = self._extract_pixel_values(image_array)
@@ -187,12 +194,12 @@ class DataExtractor:
                 print(f"Channel {channel} processed!")
         print("All images processed!")
 
-    def show_reference_image(self):
-        image_array = self._get_image_data(self.reference_image_id, channel=0)
+    def show_reference_image(self, channel):
+        image_array = self._get_image_data(self.reference_image_id, channel)
         plt.imshow(image_array, cmap='gray')
         plt.show()
 
-    def plot_reference_image_with_rois(self):
+    def plot_reference_image_with_rois(self, channel=0, upscale=True):
         def draw_roi(x_pos, y_pos, width, height, color, label):
             rect = patches.Rectangle((x_pos, y_pos), width, height, linewidth=0.1, edgecolor=color, facecolor='none',
                                      label=label)
@@ -200,7 +207,10 @@ class DataExtractor:
 
         image_array = self._get_image_data(self.reference_image_id, 0)
         fig, ax = plt.subplots()
-        plt.imshow(image_array, cmap='gray')
+        if upscale == True:
+            plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 0.01))
+        else:
+            plt.imshow(image_array, cmap='gray')
         for i, (roi_dark, roi_light) in enumerate(
                 zip(self.dark_roi_pixel_coordinates, self.light_roi_pixel_coordinates)):
             label = 'Dark ROIs' if i == 0 else '_nolegend_'
