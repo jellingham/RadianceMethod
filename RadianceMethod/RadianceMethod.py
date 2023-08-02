@@ -100,7 +100,7 @@ class RadianceMethod:
                                                                self.camera_real_position)
             self.light_roi_camera_real_distances.append(light_roi_camera_real_distance)
 
-    def _get_image_data(self, image_id, channel='all'):
+    def _get_image_data(self, image_id, channel):
         file_path = self._get_image_file_path(image_id)
         image_array = _get_channel_arrays_from_jpg_file(file_path, channel)
         return image_array
@@ -188,8 +188,8 @@ class RadianceMethod:
         print("All images processed!")
 
     def show_reference_image(self):
-        image_array = self._get_image_data(self.reference_image_id)
-        plt.imshow(image_array)
+        image_array = self._get_image_data(self.reference_image_id, channel=0)
+        plt.imshow(image_array, cmap='gray')
         plt.show()
 
     def plot_reference_image_with_rois(self):
@@ -198,9 +198,9 @@ class RadianceMethod:
                                      label=label)
             return rect
 
-        image_array = self._get_image_data(self.reference_image_id)
+        image_array = self._get_image_data(self.reference_image_id, 0)
         fig, ax = plt.subplots()
-        plt.imshow(image_array)
+        plt.imshow(image_array, cmap='gray')
         for i, (roi_dark, roi_light) in enumerate(
                 zip(self.dark_roi_pixel_coordinates, self.light_roi_pixel_coordinates)):
             label = 'Dark ROIs' if i == 0 else '_nolegend_'
@@ -273,8 +273,6 @@ def _calc_distance_3d(point1, point2):
 
 def _get_channel_arrays_from_jpg_file(file, channel):
     channel_array = plt.imread(file)
-    if channel == 'all':
-        return channel_array
     return channel_array[:, :, channel]
 
 
