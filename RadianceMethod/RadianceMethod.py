@@ -29,6 +29,8 @@ class RadianceMethod:
         self.number_of_rois = None
         self.roi_pixel_width = None
         self.experiment_name = None
+        self.dark_roi_camera_real_distances = None
+        self.light_roi_camera_real_distances = None
 
     def set_image_series(self, first_image_id, last_image_id, skip_n_images=0):
         self.first_image_id = first_image_id
@@ -64,19 +66,33 @@ class RadianceMethod:
         self.experiment_name = experiment_name
 
     def set_camera_position(self, x, y, z):
-        self.camera_real_position = (x, y, z)
+        self.camera_real_position = np.array([x, y, z])
 
     def _calc_roi_pixel_positions(self):
-        self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dx, self.dark_roi_pixel_dy = _divide_line(
+        print("Calculating ROI pixel positions...")
+        self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dx, self.dark_roi_pixel_dy = _divide_line_2d(
             self.dark_roi_pixel_bounds[0], self.dark_roi_pixel_bounds[1], self.number_of_rois)
-        self.light_roi_pixel_coordinates, self.light_roi_pixel_dx, self.light_roi_pixel_dy = _divide_line(
+        self.light_roi_pixel_coordinates, self.light_roi_pixel_dx, self.light_roi_pixel_dy = _divide_line_2d(
             self.light_roi_pixel_bounds[0], self.light_roi_pixel_bounds[1], self.number_of_rois)
 
     def _calc_roi_real_positions(self):
-        self.dark_roi_real_coordinates, self.dark_roi_real_dx, self.dark_roi_real_dy = _divide_line(
-            self.dark_roi_real_bounds[0], self.dark_roi_real_bounds[1], self.number_of_rois, coordinates='real')
-        self.light_roi_real_coordinates, self.light_roi_real_dx, self.light_roi_real_dy = _divide_line(
-            self.light_roi_real_bounds[0], self.light_roi_real_bounds[1], self.number_of_rois, coordinates='real')
+        print("Calculating ROI real positions...")
+        self.dark_roi_real_coordinates, self.dark_roi_real_dx, self.dark_roi_real_dy, self.dark_roi_real_dz = _divide_line_3d(
+            self.dark_roi_real_bounds[0], self.dark_roi_real_bounds[1], self.number_of_rois)
+        self.light_roi_real_coordinates, self.light_roi_real_dx, self.light_roi_real_dy, self.light_roi_real_dz = _divide_line_3d(
+            self.light_roi_real_bounds[0], self.light_roi_real_bounds[1], self.number_of_rois)
+
+    def _calc_roi_camera_real_distances(self):
+        print("Calculating distances between camera and ROIs...")
+        self.light_roi_camera_real_distances = []
+        self.dark_roi_camera_real_distances = []
+        for i in range(self.number_of_rois):
+            dark_roi_camera_real_distance = _calc_distance_3d(self.dark_roi_real_coordinates[i],
+                                                              self.camera_real_position)
+            self.dark_roi_camera_real_distances.append(dark_roi_camera_real_distance)
+            light_roi_camera_real_distance = _calc_distance_3d(self.light_roi_real_coordinates[i],
+                                                               self.camera_real_position)
+            self.light_roi_camera_real_distances.append(light_roi_camera_real_distance)
 
     def _get_image_data(self, image_id, channel='all'):
         file_path = self._get_image_file_path(image_id)
@@ -115,21 +131,34 @@ class RadianceMethod:
     def process_image_data(self):
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images + 1)
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
+
+        header_1_dark_rois = ["ROI real coordinates", "[m m]"] + list(
+            self.dark_roi_real_coordinates[:-1] + np.array([0, 0, self.dark_roi_real_dz / 2]))
+        header_1_light_rois = ["ROI real coordinates", "[m m]"] + list(
+            self.light_roi_real_coordinates[:-1] + np.array([0, 0, self.light_roi_real_dz / 2]))
+        header_2_dark_rois = ["Camera to ROI real distances", "m"] + list(self.dark_roi_camera_real_distances[:-1])
+        header_2_light_rois = ["Camera to ROI real distances", "m"] + list(self.light_roi_camera_real_distances[:-1])
+
+        header_3 = ["Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
+
         for channel in [0, 1, 2]:
             filename_1 = f'{self.experiment_name}_dark_values_channel_{channel}.csv'
             filename_2 = f'{self.experiment_name}_light_values_channel_{channel}.csv'
 
             with open(filename_1, 'w') as csvfile_1, open(filename_2, 'w') as csvfile_2:
-                writer_1 = csv.writer(csvfile_1)
-                writer_2 = csv.writer(csvfile_2)
+                writer_1 = csv.writer(csvfile_1)  # Dark ROIs
+                writer_2 = csv.writer(csvfile_2)  # Light ROIs
 
-                header_1_black_rois = ["ROI real coordinates", "[m m]"] + list(self.dark_roi_real_coordinates)
-                header_1_light_rois = ["ROI real coordinates", "[m m]"] + list(self.light_roi_real_coordinates)
-                header_2 = ["Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
-                writer_1.writerow(header_1_black_rois)
-                writer_1.writerow(header_2)
+                writer_1.writerow(header_1_dark_rois)
+                writer_1.writerow(header_2_dark_rois)
+                writer_1.writerow(header_3)
+
                 writer_2.writerow(header_1_light_rois)
-                writer_2.writerow(header_2)
+                writer_2.writerow(header_2_light_rois)
+                writer_2.writerow(header_3)
+
+                print(filename_1, "written!")
+                print(filename_2, "written!")
 
                 reference_image_file_path = self._get_image_file_path(self.reference_image_id)
                 reference_image_capture_time = _get_capture_date_time(reference_image_file_path)
@@ -145,6 +174,7 @@ class RadianceMethod:
                     writer_2.writerow([capture_time, time_delta] + roi_light_values)
                 time.sleep(0.1)
                 print(f"Channel {channel} processed!")
+        print("All images processed!")
 
     def plot_reference_image_with_roi(self):
         def draw_roi(x_pos, y_pos, width, height, color, label):
@@ -170,7 +200,7 @@ class RadianceMethod:
         plt.savefig("ROIs.pdf")
 
 
-def _divide_line(point1, point2, n, coordinates='pixel'):
+def _divide_line_2d(point1, point2, n):
     x1, y1 = point1
     x2, y2 = point2
 
@@ -184,12 +214,44 @@ def _divide_line(point1, point2, n, coordinates='pixel'):
         intermediate_x = x1 + step_x * i
         intermediate_y = y1 + step_y * i
         intermediate_points.append((intermediate_x, intermediate_y))
-        points = [point1] + intermediate_points + [point2]
-    if coordinates == 'real':
-        points = np.array(points, dtype=float)
-        return points, step_x, step_y
+    points = [point1] + intermediate_points + [point2]
     points = np.array(points, dtype=int)
     return points, int(step_x), int(step_y)
+
+
+def _divide_line_3d(point1, point2, n):
+    x1, y1, z1 = point1
+    x2, y2, z2 = point2
+
+    # Calculate the step size for x, y, and z coordinates
+    step_x = (x2 - x1) / n
+    step_y = (y2 - y1) / n
+    step_z = (z2 - z1) / n
+
+    # Generate intermediate points
+    intermediate_points = []
+    for i in range(1, n):
+        intermediate_x = x1 + step_x * i
+        intermediate_y = y1 + step_y * i
+        intermediate_z = z1 + step_z * i
+        intermediate_points.append((intermediate_x, intermediate_y, intermediate_z))
+    points = [point1] + intermediate_points + [point2]
+    points = np.array(points)
+    return points, step_x, step_y, step_z
+
+
+def _calc_distance_3d(point1, point2):
+    """
+    Calculate the Euclidean distance between two 3D points.
+
+    Parameters:
+        point1 (tuple or ndarray): A tuple (x1, y1, z1) or ndarray [x1, y1, z1] representing the coordinates of the first point.
+        point2 (tuple or ndarray): A tuple (x2, y2, z2) or ndarray [x2, y2, z2] representing the coordinates of the second point.
+
+    Returns:
+        float: The Euclidean distance between the two 3D points.
+    """
+    return np.linalg.norm(np.array(point2) - np.array(point1))
 
 
 def _get_channel_arrays_from_jpg_file(file, channel):
