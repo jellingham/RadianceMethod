@@ -128,6 +128,11 @@ class RadianceMethod:
 
         return roi_dark_values, roi_light_values
 
+    def calc_geometrics(self):
+        self._calc_roi_pixel_positions()
+        self._calc_roi_real_positions()
+        self._calc_roi_camera_real_distances()
+
     def process_image_data(self):
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images + 1)
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
