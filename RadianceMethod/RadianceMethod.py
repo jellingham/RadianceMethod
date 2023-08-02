@@ -176,7 +176,12 @@ class RadianceMethod:
                 print(f"Channel {channel} processed!")
         print("All images processed!")
 
-    def plot_reference_image_with_roi(self):
+    def show_reference_image(self):
+        image_array = self._get_image_data(self.reference_image_id)
+        plt.imshow(image_array)
+        plt.show()
+
+    def plot_reference_image_with_rois(self):
         def draw_roi(x_pos, y_pos, width, height, color, label):
             rect = patches.Rectangle((x_pos, y_pos), width, height, linewidth=0.1, edgecolor=color, facecolor='none',
                                      label=label)
