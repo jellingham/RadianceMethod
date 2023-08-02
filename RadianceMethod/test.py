@@ -3,6 +3,7 @@ from RadianceMethod import RadianceMethod
 test = RadianceMethod()
 test.set_experiment_name("Testexperiment")
 test.set_image_dir('/Users/kristianboerger/repos/RadianceMethod/test_images')
+test.set_results_dir('/Users/kristianboerger/repos/RadianceMethod/test_results')
 test.set_camera_position(0,0,0)
 test.set_image_series(8711,8713)
 test.set_image_name_string('DSC{:05d}.JPG')

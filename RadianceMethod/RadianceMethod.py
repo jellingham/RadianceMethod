@@ -15,6 +15,7 @@ class RadianceMethod:
         self.dark_roi_pixel_dy = None
         self.dark_roi_real_dx = None
         self.image_dir = None
+        self.results_dir = None
         self.reference_image_id = None
         self.first_image_id = None
         self.last_image_id = None
@@ -45,6 +46,11 @@ class RadianceMethod:
 
     def set_image_dir(self, image_dir):
         self.image_dir = image_dir
+
+    def set_results_dir(self, results_dir):
+        self.results_dir = results_dir
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
 
     def set_dark_roi_pixel_bounds(self, lower_pixel_bound, upper_pixel_bound):
         self.dark_roi_pixel_bounds = (lower_pixel_bound, upper_pixel_bound)
@@ -147,10 +153,10 @@ class RadianceMethod:
         header_3 = ["Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
 
         for channel in [0, 1, 2]:
-            filename_1 = f'{self.experiment_name}_dark_values_channel_{channel}.csv'
-            filename_2 = f'{self.experiment_name}_light_values_channel_{channel}.csv'
+            file_1_path = os.path.join(self.results_dir, f'{self.experiment_name}_dark_values_channel_{channel}.csv')
+            file_2_path = os.path.join(self.results_dir, f'{self.experiment_name}_light_values_channel_{channel}.csv')
 
-            with open(filename_1, 'w') as csvfile_1, open(filename_2, 'w') as csvfile_2:
+            with open(file_1_path, 'w') as csvfile_1, open(file_2_path, 'w') as csvfile_2:
                 writer_1 = csv.writer(csvfile_1)  # Dark ROIs
                 writer_2 = csv.writer(csvfile_2)  # Light ROIs
 
@@ -162,8 +168,8 @@ class RadianceMethod:
                 writer_2.writerow(header_2_light_rois)
                 writer_2.writerow(header_3)
 
-                print(filename_1, "written!")
-                print(filename_2, "written!")
+                print(file_1_path, "written!")
+                print(file_2_path, "written!")
 
                 reference_image_file_path = self._get_image_file_path(self.reference_image_id)
                 reference_image_capture_time = _get_capture_date_time(reference_image_file_path)
@@ -207,7 +213,8 @@ class RadianceMethod:
             ax.text(roi_dark[0], roi_dark[1], i, fontsize=0.1, color='red', horizontalalignment='right')
             ax.text(roi_light[0], roi_light[1], i, fontsize=0.1, color='blue', horizontalalignment='right')
         plt.legend()
-        plt.savefig("ROIs.pdf")
+        file_path = os.path.join(self.results_dir, "ROIs.pdf")
+        plt.savefig(file_path)
 
 
 def _divide_line_2d(point1, point2, n):
