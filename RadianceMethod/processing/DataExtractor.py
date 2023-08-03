@@ -194,10 +194,13 @@ class DataExtractor:
                 print(f"Channel {channel} processed!")
         print("All images processed!")
 
-    def show_reference_image(self, channel):
+    def show_reference_image(self, channel, upscale=True):
         image_array = self._get_image_data(self.reference_image_id, channel)
-        plt.imshow(image_array, cmap='gray')
-        plt.show()
+        if upscale == True:
+            plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
+        else:
+            plt.imshow(image_array, cmap='gray')
+         plt.show()
 
     def plot_reference_image_with_rois(self, channel=0, upscale=True):
         def draw_roi(x_pos, y_pos, width, height, color, label):
@@ -208,7 +211,7 @@ class DataExtractor:
         image_array = self._get_image_data(self.reference_image_id, 0)
         fig, ax = plt.subplots()
         if upscale == True:
-            plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 0.01))
+            plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
         else:
             plt.imshow(image_array, cmap='gray')
         for i, (roi_dark, roi_light) in enumerate(
