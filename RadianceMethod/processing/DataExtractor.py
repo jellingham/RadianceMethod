@@ -150,14 +150,14 @@ class DataExtractor:
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images + 1)
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
 
-        header_1_dark_rois = ["ROI real coordinates", "[m m]"] + list(
+        header_1_dark_rois = ["ROI real coordinates", "", "[m m]"] + list(
             self.dark_roi_real_coordinates + np.array([0, 0, self.dark_roi_real_dz / 2]))
-        header_1_light_rois = ["ROI real coordinates", "[m m]"] + list(
+        header_1_light_rois = ["ROI real coordinates", "", "[m m]"] + list(
             self.light_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2]))
-        header_2_dark_rois = ["Camera to ROI real distances", "m"] + list(self.dark_roi_camera_real_distances)
-        header_2_light_rois = ["Camera to ROI real distances", "m"] + list(self.light_roi_camera_real_distances)
+        header_2_dark_rois = ["Camera to ROI real distances", "", "m"] + list(self.dark_roi_camera_real_distances)
+        header_2_light_rois = ["Camera to ROI real distances", "", "m"] + list(self.light_roi_camera_real_distances)
 
-        header_3 = ["Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
+        header_3 = ["Image ID", "Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
 
         for channel in [0, 1, 2]:
             file_1_path = os.path.join(self.results_dir, f'{self.experiment_name}_dark_values_channel_{channel}.csv')
@@ -188,8 +188,8 @@ class DataExtractor:
                     time_delta = capture_time - reference_image_capture_time
 
                     roi_dark_values, roi_light_values = self._extract_pixel_values(image_array)
-                    writer_1.writerow([capture_time, time_delta] + roi_dark_values)
-                    writer_2.writerow([capture_time, time_delta] + roi_light_values)
+                    writer_1.writerow([image_id, capture_time, time_delta] + roi_dark_values)
+                    writer_2.writerow([image_id, capture_time, time_delta] + roi_light_values)
                 time.sleep(0.1)
                 print(f"Channel {channel} processed!")
         print("All images processed!")
