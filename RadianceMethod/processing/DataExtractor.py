@@ -146,14 +146,22 @@ class DataExtractor:
         self._calc_roi_real_positions()
         self._calc_roi_camera_real_distances()
 
+    def write_roi_coordinates(self):
+        dark_roi_real_center_coordinates =  self.dark_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2])
+        light_roi_real_center_coordinates =  self.light_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2])
+        file_1_path = os.path.join(self.results_dir, 'ROI_dark_coordinates.csv')
+        np.savetxt(file_1_path, dark_roi_real_center_coordinates, header='X, Y, Z', delimiter=',')
+        file_2_path = os.path.join(self.results_dir, 'ROI_light_coordinates.csv')
+        np.savetxt(file_2_path, light_roi_real_center_coordinates, header='X, Y, Z', delimiter=',')
+
     def process_image_data(self):
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images + 1)
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
 
-        header_1_dark_rois = ["ROI real coordinates", "", "[m m]"] + list(
-            self.dark_roi_real_coordinates + np.array([0, 0, self.dark_roi_real_dz / 2]))
+        header_1_dark_rois = ["ROI height", "", "[m m]"] + list(
+            self.dark_roi_real_coordinates[:, 2] + self.dark_roi_real_dz / 2)
         header_1_light_rois = ["ROI real coordinates", "", "[m m]"] + list(
-            self.light_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2]))
+            self.light_roi_real_coordinates[:, 2] + self.light_roi_real_dz / 2)
         header_2_dark_rois = ["Camera to ROI real distances", "", "m"] + list(self.dark_roi_camera_real_distances)
         header_2_light_rois = ["Camera to ROI real distances", "", "m"] + list(self.light_roi_camera_real_distances)
 
