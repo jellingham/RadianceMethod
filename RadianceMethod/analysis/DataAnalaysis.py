@@ -35,3 +35,20 @@ class DataAnalysis():
                 results_df_normlised = results_df.copy()
                 results_df_normlised.iloc[:, 3:] /= results_df_normlised.iloc[0, 3:]
                 self.normalised_results_dict[f"{cb_face}_roi_channel_{channel}"] = results_df_normlised
+
+
+    def calc_intensities(self):
+        for channel in range(3):
+            dark_results_df = self.results_dict[f"dark_roi_channel_{channel}"]
+            light_results_df = self.results_dict[f"light_roi_channel_{channel}"]
+
+            n_s = dark_results_df.iloc[:,3:] - light_results_df.iloc[:,3:]
+            n_0 = dark_results_df.iloc[0,3:] - light_results_df.iloc[0,3:]
+            inteisities = n_s / n_0
+            intensities_df = dark_results_df.copy()
+            intensities_df.iloc[:,3:] = inteisities
+            intensities_df.to_csv(os.path.join(self.results_dir, f"intensities_channel_{channel}.csv"))
+
+
+
+
