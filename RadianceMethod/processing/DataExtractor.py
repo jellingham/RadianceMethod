@@ -121,7 +121,7 @@ class DataExtractor:
         roi_dark_values = []
         roi_light_values = []
 
-        for coord in self.dark_roi_pixel_coordinates[:-1]:
+        for coord in self.dark_roi_pixel_coordinates:
             y_bottom = coord[1]
             y_top = y_bottom + self.light_roi_pixel_dy
             x_left = coord[0] - int(self.roi_pixel_width / 2)
@@ -130,7 +130,7 @@ class DataExtractor:
             roi_mean = roi.mean()
             roi_dark_values.append(roi_mean)
 
-        for coord in self.light_roi_pixel_coordinates[:-1]:
+        for coord in self.light_roi_pixel_coordinates:
             y_bottom = coord[1]
             y_top = y_bottom + self.light_roi_pixel_dy
             x_left = coord[0] - int(self.roi_pixel_width / 2)
@@ -151,11 +151,11 @@ class DataExtractor:
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
 
         header_1_dark_rois = ["ROI real coordinates", "[m m]"] + list(
-            self.dark_roi_real_coordinates[:-1] + np.array([0, 0, self.dark_roi_real_dz / 2]))
+            self.dark_roi_real_coordinates + np.array([0, 0, self.dark_roi_real_dz / 2]))
         header_1_light_rois = ["ROI real coordinates", "[m m]"] + list(
-            self.light_roi_real_coordinates[:-1] + np.array([0, 0, self.light_roi_real_dz / 2]))
-        header_2_dark_rois = ["Camera to ROI real distances", "m"] + list(self.dark_roi_camera_real_distances[:-1])
-        header_2_light_rois = ["Camera to ROI real distances", "m"] + list(self.light_roi_camera_real_distances[:-1])
+            self.light_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2]))
+        header_2_dark_rois = ["Camera to ROI real distances", "m"] + list(self.dark_roi_camera_real_distances)
+        header_2_light_rois = ["Camera to ROI real distances", "m"] + list(self.light_roi_camera_real_distances)
 
         header_3 = ["Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
 

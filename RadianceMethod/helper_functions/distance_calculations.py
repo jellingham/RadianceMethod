@@ -14,7 +14,7 @@ def _divide_line_2d(point1, point2, n):
         intermediate_x = x1 + step_x * i
         intermediate_y = y1 + step_y * i
         intermediate_points.append((intermediate_x, intermediate_y))
-    points = [point1] + intermediate_points + [point2]
+    points = [point1] + intermediate_points
     points = np.array(points, dtype=int)
     return points, int(step_x), int(step_y)
 
@@ -35,7 +35,7 @@ def _divide_line_3d(point1, point2, n):
         intermediate_y = y1 + step_y * i
         intermediate_z = z1 + step_z * i
         intermediate_points.append((intermediate_x, intermediate_y, intermediate_z))
-    points = [point1] + intermediate_points + [point2]
+    points = [point1] + intermediate_points
     points = np.array(points)
     return points, step_x, step_y, step_z
 
