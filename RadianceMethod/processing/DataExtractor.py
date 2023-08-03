@@ -158,9 +158,9 @@ class DataExtractor:
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images + 1)
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
 
-        header_1_dark_rois = ["ROI height", "", "[m m]"] + list(
+        header_1_dark_rois = ["ROI height", "", "m"] + list(
             self.dark_roi_real_coordinates[:, 2] + self.dark_roi_real_dz / 2)
-        header_1_light_rois = ["ROI real coordinates", "", "[m m]"] + list(
+        header_1_light_rois = ["ROI real coordinates", "", "m"] + list(
             self.light_roi_real_coordinates[:, 2] + self.light_roi_real_dz / 2)
         header_2_dark_rois = ["Camera to ROI real distances", "", "m"] + list(self.dark_roi_camera_real_distances)
         header_2_light_rois = ["Camera to ROI real distances", "", "m"] + list(self.light_roi_camera_real_distances)
