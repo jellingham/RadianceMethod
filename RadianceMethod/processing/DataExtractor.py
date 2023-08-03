@@ -200,7 +200,7 @@ class DataExtractor:
             plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
         else:
             plt.imshow(image_array, cmap='gray')
-         plt.show()
+        plt.show()
 
     def plot_reference_image_with_rois(self, channel=0, upscale=True):
         def draw_roi(x_pos, y_pos, width, height, color, label):
@@ -208,7 +208,8 @@ class DataExtractor:
                                      label=label)
             return rect
 
-        image_array = self._get_image_data(self.reference_image_id, 0)
+        image_array = self._get_image_data(self.reference_image_id, channel)
+
         fig, ax = plt.subplots()
         if upscale == True:
             plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
@@ -223,8 +224,20 @@ class DataExtractor:
                                   label)
             ax.add_patch(rect_dark)
             ax.add_patch(rect_light)
-            ax.text(roi_dark[0], roi_dark[1], i, fontsize=0.1, color='red', horizontalalignment='right')
-            ax.text(roi_light[0], roi_light[1], i, fontsize=0.1, color='blue', horizontalalignment='right')
+
+            if self.dark_roi_pixel_coordinates[i, 0].max() < self.light_roi_pixel_coordinates[i, 0].max():
+                dark_roi_text_x_position = roi_dark[0]
+                light_roi_text_x_position = roi_light[0] + self.roi_pixel_width
+                dark_roi_text_alignment = 'right'
+                light_roi_text_alignment = 'left'
+            else:
+                dark_roi_text_x_position = roi_dark[0] + self.roi_pixel_width
+                light_roi_text_x_position = roi_light[0]
+                dark_roi_text_alignment = 'left'
+                light_roi_text_alignment = 'right'
+
+            ax.text(dark_roi_text_x_position, roi_dark[1], i, fontsize=0.1, color='red', horizontalalignment=dark_roi_text_alignment)
+            ax.text(light_roi_text_x_position, roi_light[1], i, fontsize=0.1, color='blue', horizontalalignment=light_roi_text_alignment)
         plt.legend()
         file_path = os.path.join(self.results_dir, "ROIs.pdf")
         plt.savefig(file_path)
