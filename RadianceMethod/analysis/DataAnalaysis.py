@@ -49,9 +49,11 @@ class DataAnalysis():
         sigma = lambda intensity, distance : -1 * np.log(intensity) / distance
         for channel in self.chanels_to_analyse:
             file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
-            intensities = pd.read_csv(file_path, skiprows=2)
-            extinction_coefficients = intensities.applymap(lambda intensity: -1 * np.log(intensity) / self.camera_to_dark_roi_real_distances)
-            print(extinction_coefficients)
+            intensities_df = pd.read_csv(file_path, skiprows=2)
+            intensities = intensities_df.iloc[:,4:].to_numpy()
+            extinction_coefficients = sigma(intensities, self.camera_to_dark_roi_real_distances) #TODO: distances are calculated for dark ROIs only right now
+            file_path = os.path.join(self.results_dir, f"extinction_coefficients_channel_{channel}.csv")
+            np.savetxt(file_path, extinction_coefficients, delimiter=',')
 
 
 
