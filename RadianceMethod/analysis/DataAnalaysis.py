@@ -45,12 +45,13 @@ class DataAnalysis():
             file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
             intensities_df.to_csv(file_path)
 
-    # def calc_extinction_coefficients(self):
-    #     for channel in self.chanels_to_analyse:
-    #         file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
-    #         intensities = pd.read_csv(file_path, skiprows=2)
-    #         extinction_coefficients =
-
+    def calc_extinction_coefficients(self):
+        sigma = lambda intensity, distance : -1 * np.log(intensity) / distance
+        for channel in self.chanels_to_analyse:
+            file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
+            intensities = pd.read_csv(file_path, skiprows=2)
+            extinction_coefficients = intensities.applymap(lambda intensity: -1 * np.log(intensity) / self.camera_to_dark_roi_real_distances)
+            print(extinction_coefficients)
 
 
 
