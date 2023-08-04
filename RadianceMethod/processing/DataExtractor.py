@@ -33,6 +33,8 @@ class DataExtractor:
         self.experiment_name = None
         self.dark_roi_camera_real_distances = None
         self.light_roi_camera_real_distances = None
+        self.height_marker_heights = None
+
 
     def set_image_series(self, first_image_id, last_image_id, skip_n_images=0):
         self.first_image_id = first_image_id
@@ -55,6 +57,9 @@ class DataExtractor:
         self.results_dir = results_dir
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
+
+    def set_height_marker_heights(self, height_marker_heights):
+        self.height_marker_heights = height_marker_heights
 
     def set_dark_roi_pixel_bounds(self, lower_pixel_bound, upper_pixel_bound):
         self.dark_roi_pixel_bounds = (lower_pixel_bound, upper_pixel_bound)
@@ -254,13 +259,10 @@ class DataExtractor:
             ax.text(light_roi_text_x_position, roi_light[1], i, fontsize=0.1, color='blue', horizontalalignment=light_roi_text_alignment)
 
         if show_height_markers:
-            height_1 = self.dark_roi_pixel_coordinates[0][1] + (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
-            height_2 = self.dark_roi_pixel_coordinates[0][1] + 2 * (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
-            height_3 = self.dark_roi_pixel_coordinates[0][1] + 3 * (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
+            for height in self.height_marker_heights:
+                marker_height = self.dark_roi_pixel_coordinates[0][1] + height * (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
+                plt.axhline(marker_height, color='orange', linestyle=':', linewidth=0.5, label=f'{height } m marker')
 
-            plt.axhline(height_1, color='orange', linestyle=':', linewidth=0.5, label='1 m marker')
-            plt.axhline(height_2, color='orange', linestyle='--', linewidth=0.5, label='2 m marker')
-            plt.axhline(height_3, color='orange', linestyle='-.', linewidth=0.5, label='3 m marker')
 
         plt.legend()
         file_path = os.path.join(self.results_dir, "ROIs.pdf")
