@@ -216,7 +216,7 @@ class DataExtractor:
             plt.imshow(image_array, cmap='gray')
         plt.show()
 
-    def plot_reference_image_with_rois(self, channel=0, upscale=True):
+    def plot_reference_image_with_rois(self, channel=0, upscale=True, show_height_markers=True):
         def draw_roi(x_pos, y_pos, width, height, color, label):
             rect = patches.Rectangle((x_pos, y_pos), width, height, linewidth=0.1, edgecolor=color, facecolor='none',
                                      label=label)
@@ -252,6 +252,16 @@ class DataExtractor:
 
             ax.text(dark_roi_text_x_position, roi_dark[1], i, fontsize=0.1, color='red', horizontalalignment=dark_roi_text_alignment)
             ax.text(light_roi_text_x_position, roi_light[1], i, fontsize=0.1, color='blue', horizontalalignment=light_roi_text_alignment)
+
+        if show_height_markers:
+            height_1 = self.dark_roi_pixel_coordinates[0][1] + (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
+            height_2 = self.dark_roi_pixel_coordinates[0][1] + 2 * (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
+            height_3 = self.dark_roi_pixel_coordinates[0][1] + 3 * (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
+
+            plt.axhline(height_1, color='orange', linestyle=':', linewidth=0.5, label='1 m marker')
+            plt.axhline(height_2, color='orange', linestyle='--', linewidth=0.5, label='2 m marker')
+            plt.axhline(height_3, color='orange', linestyle='-.', linewidth=0.5, label='3 m marker')
+
         plt.legend()
         file_path = os.path.join(self.results_dir, "ROIs.pdf")
         plt.savefig(file_path)
