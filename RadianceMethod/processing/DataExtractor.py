@@ -260,10 +260,14 @@ class DataExtractor:
 
         if show_height_markers:
             for height in self.height_marker_heights:
-                marker_height = self.dark_roi_pixel_coordinates[0][1] + height * (
+                dark_marker_height = self.dark_roi_pixel_coordinates[0][1] + height * (
                         self.dark_roi_pixel_bounds[1][1] - self.dark_roi_pixel_bounds[0][1]) / (
                                         self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
-                plt.axhline(marker_height, color='orange', linestyle=':', linewidth=0.5, label=f'{height} m marker')
+                light_marker_height = self.light_roi_pixel_coordinates[0][1] + height * (
+                        self.light_roi_pixel_bounds[1][1] - self.light_roi_pixel_bounds[0][1]) / (
+                                        self.light_roi_real_bounds[1][2] - self.light_roi_real_bounds[0][2])
+                plt.axhline(dark_marker_height, color='orange', linestyle=':', linewidth=0.5, label=f'{height} m marker (Dark)')
+                plt.axhline(light_marker_height, color='yellow', linestyle=':', linewidth=0.5, label=f'{height} m marker (Light)')
 
         plt.legend()
         file_path = os.path.join(self.results_dir, "ROIs.pdf")
