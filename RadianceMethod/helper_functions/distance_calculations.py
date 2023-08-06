@@ -1,6 +1,7 @@
 import numpy as np
 
-def _divide_line_2d(point1, point2, n):
+
+def divide_line_2d(point1, point2, n):
     x1, y1 = point1
     x2, y2 = point2
 
@@ -19,7 +20,7 @@ def _divide_line_2d(point1, point2, n):
     return points, int(step_x), int(step_y)
 
 
-def _divide_line_3d(point1, point2, n):
+def divide_line_3d(point1, point2, n):
     x1, y1, z1 = point1
     x2, y2, z2 = point2
 
@@ -40,13 +41,13 @@ def _divide_line_3d(point1, point2, n):
     return points, step_x, step_y, step_z
 
 
-def _calc_distance_3d(point1, point2):
+def calc_distance_3d(point1, point2):
     """
     Calculate the Euclidean distance between two 3D points.
 
-    Parameters:
-        point1 (tuple or ndarray): A tuple (x1, y1, z1) or ndarray [x1, y1, z1] representing the coordinates of the first point.
-        point2 (tuple or ndarray): A tuple (x2, y2, z2) or ndarray [x2, y2, z2] representing the coordinates of the second point.
+    Parameters: point1 (tuple or ndarray): A tuple (x1, y1, z1) or ndarray [x1, y1, z1] representing the coordinates
+    of the first point. point2 (tuple or ndarray): A tuple (x2, y2, z2) or ndarray [x2, y2, z2] representing the
+    coordinates of the second point.
 
     Returns:
         float: The Euclidean distance between the two 3D points.

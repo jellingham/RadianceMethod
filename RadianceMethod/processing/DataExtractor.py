@@ -6,8 +6,9 @@ from matplotlib import patches
 import csv
 from tqdm import tqdm
 
-from RadianceMethod.helper_functions.distance_calculations import _calc_distance_3d, _divide_line_2d, _divide_line_3d
-from RadianceMethod.helper_functions.image_reading import get_capture_date_time, get_channel_arrays_from_jpg_file, get_channel_arrays_from_raw_file
+from RadianceMethod.helper_functions.distance_calculations import calc_distance_3d, divide_line_2d, divide_line_3d
+from RadianceMethod.helper_functions.image_reading import get_capture_date_time, get_channel_arrays_from_jpg_file, \
+    get_channel_arrays_from_raw_file
 
 
 class DataExtractor:
@@ -34,7 +35,6 @@ class DataExtractor:
         self.dark_roi_camera_real_distances = None
         self.light_roi_camera_real_distances = None
         self.height_marker_heights = None
-
 
     def set_image_series(self, first_image_id, last_image_id, skip_n_images=0):
         self.first_image_id = first_image_id
@@ -85,16 +85,16 @@ class DataExtractor:
 
     def _calc_roi_pixel_positions(self):
         print("Calculating ROI pixel positions...")
-        self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dx, self.dark_roi_pixel_dy = _divide_line_2d(
+        self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dx, self.dark_roi_pixel_dy = divide_line_2d(
             self.dark_roi_pixel_bounds[0], self.dark_roi_pixel_bounds[1], self.number_of_rois)
-        self.light_roi_pixel_coordinates, self.light_roi_pixel_dx, self.light_roi_pixel_dy = _divide_line_2d(
+        self.light_roi_pixel_coordinates, self.light_roi_pixel_dx, self.light_roi_pixel_dy = divide_line_2d(
             self.light_roi_pixel_bounds[0], self.light_roi_pixel_bounds[1], self.number_of_rois)
 
     def _calc_roi_real_positions(self):
         print("Calculating ROI real positions...")
-        self.dark_roi_real_coordinates, self.dark_roi_real_dx, self.dark_roi_real_dy, self.dark_roi_real_dz = _divide_line_3d(
+        self.dark_roi_real_coordinates, self.dark_roi_real_dx, self.dark_roi_real_dy, self.dark_roi_real_dz = divide_line_3d(
             self.dark_roi_real_bounds[0], self.dark_roi_real_bounds[1], self.number_of_rois)
-        self.light_roi_real_coordinates, self.light_roi_real_dx, self.light_roi_real_dy, self.light_roi_real_dz = _divide_line_3d(
+        self.light_roi_real_coordinates, self.light_roi_real_dx, self.light_roi_real_dy, self.light_roi_real_dz = divide_line_3d(
             self.light_roi_real_bounds[0], self.light_roi_real_bounds[1], self.number_of_rois)
 
     def _calc_roi_camera_real_distances(self):
@@ -102,18 +102,19 @@ class DataExtractor:
         self.light_roi_camera_real_distances = []
         self.dark_roi_camera_real_distances = []
         for i in range(self.number_of_rois):
-            dark_roi_camera_real_distance = _calc_distance_3d(self.dark_roi_real_coordinates[i],
-                                                              self.camera_real_position)
+            dark_roi_camera_real_distance = calc_distance_3d(self.dark_roi_real_coordinates[i],
+                                                             self.camera_real_position)
             self.dark_roi_camera_real_distances.append(dark_roi_camera_real_distance)
-            light_roi_camera_real_distance = _calc_distance_3d(self.light_roi_real_coordinates[i],
-                                                               self.camera_real_position)
+            light_roi_camera_real_distance = calc_distance_3d(self.light_roi_real_coordinates[i],
+                                                              self.camera_real_position)
             self.light_roi_camera_real_distances.append(light_roi_camera_real_distance)
 
     def _get_image_data(self, image_id, channel):
         file_path = self._get_image_file_path(image_id)
+        image_array = None
         if self.image_file_format == 'jpg':
             image_array = get_channel_arrays_from_jpg_file(file_path, channel)
-        if self.image_file_format == 'raw':
+        elif self.image_file_format == 'raw':
             image_array = get_channel_arrays_from_raw_file(file_path, channel)
         return image_array
 
@@ -122,27 +123,23 @@ class DataExtractor:
         file_path = os.path.join(self.image_dir, filename)
         return file_path
 
-    def _extract_pixel_values(self, image_array):  # TODO: outsource in single function
-        roi_dark_values = []
-        roi_light_values = []
+    def _extract_pixel_values(self, image_array):
 
-        for coord in self.dark_roi_pixel_coordinates:
-            y_bottom = coord[1]
-            y_top = y_bottom + self.light_roi_pixel_dy
-            x_left = coord[0] - int(self.roi_pixel_width / 2)
-            x_right = x_left + self.roi_pixel_width
-            roi = image_array[y_top:y_bottom, x_left:x_right]
-            roi_mean = roi.mean()
-            roi_dark_values.append(roi_mean)
+        def calc_roi_mean_values(roi_pixel_coordinates, roi_pixel_dy):
+            roi_pixel_values = []
+            for coord in roi_pixel_coordinates:
+                y_bottom = coord[1]
+                y_top = y_bottom + roi_pixel_dy
+                x_left = coord[0] - int(self.roi_pixel_width / 2)
+                x_right = x_left + self.roi_pixel_width
+                roi = image_array[y_top:y_bottom, x_left:x_right]
+                roi_mean = roi.mean()
+                roi_pixel_values.append(roi_mean)
 
-        for coord in self.light_roi_pixel_coordinates:
-            y_bottom = coord[1]
-            y_top = y_bottom + self.light_roi_pixel_dy
-            x_left = coord[0] - int(self.roi_pixel_width / 2)
-            x_right = x_left + self.roi_pixel_width
-            roi = image_array[y_top:y_bottom, x_left:x_right]
-            roi_mean = roi.mean()
-            roi_light_values.append(roi_mean)
+                return roi_dark_values
+
+        roi_dark_values = calc_roi_mean_values(self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dy)
+        roi_light_values = calc_roi_mean_values(self.light_roi_pixel_coordinates, self.light_roi_pixel_dy)
 
         return roi_dark_values, roi_light_values
 
@@ -152,8 +149,9 @@ class DataExtractor:
         self._calc_roi_camera_real_distances()
 
     def write_roi_real_coordinates(self):
-        dark_roi_real_center_coordinates =  self.dark_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2])
-        light_roi_real_center_coordinates =  self.light_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2])
+        dark_roi_real_center_coordinates = self.dark_roi_real_coordinates + np.array([0, 0, self.light_roi_real_dz / 2])
+        light_roi_real_center_coordinates = self.light_roi_real_coordinates + np.array(
+            [0, 0, self.light_roi_real_dz / 2])
         file_1_path = os.path.join(self.results_dir, 'roi_dark_coordinates.csv')
         np.savetxt(file_1_path, dark_roi_real_center_coordinates, header='X, Y, Z', delimiter=',')
         file_2_path = os.path.join(self.results_dir, 'roi_light_coordinates.csv')
@@ -215,7 +213,7 @@ class DataExtractor:
 
     def show_reference_image(self, channel, upscale=True):
         image_array = self._get_image_data(self.reference_image_id, channel)
-        if upscale == True:
+        if upscale:
             plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
         else:
             plt.imshow(image_array, cmap='gray')
@@ -230,7 +228,7 @@ class DataExtractor:
         image_array = self._get_image_data(self.reference_image_id, channel)
 
         fig, ax = plt.subplots()
-        if upscale == True:
+        if upscale:
             plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
         else:
             plt.imshow(image_array, cmap='gray')
@@ -255,18 +253,18 @@ class DataExtractor:
                 dark_roi_text_alignment = 'left'
                 light_roi_text_alignment = 'right'
 
-            ax.text(dark_roi_text_x_position, roi_dark[1], i, fontsize=0.1, color='red', horizontalalignment=dark_roi_text_alignment)
-            ax.text(light_roi_text_x_position, roi_light[1], i, fontsize=0.1, color='blue', horizontalalignment=light_roi_text_alignment)
+            ax.text(dark_roi_text_x_position, roi_dark[1], i, fontsize=0.1, color='red',
+                    horizontalalignment=dark_roi_text_alignment)
+            ax.text(light_roi_text_x_position, roi_light[1], i, fontsize=0.1, color='blue',
+                    horizontalalignment=light_roi_text_alignment)
 
         if show_height_markers:
             for height in self.height_marker_heights:
-                marker_height = self.dark_roi_pixel_coordinates[0][1] + height * (self.dark_roi_pixel_bounds[1][1]- self.dark_roi_pixel_bounds[0][1]) / (self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
-                plt.axhline(marker_height, color='orange', linestyle=':', linewidth=0.5, label=f'{height } m marker')
-
+                marker_height = self.dark_roi_pixel_coordinates[0][1] + height * (
+                        self.dark_roi_pixel_bounds[1][1] - self.dark_roi_pixel_bounds[0][1]) / (
+                                        self.dark_roi_real_bounds[1][2] - self.dark_roi_real_bounds[0][2])
+                plt.axhline(marker_height, color='orange', linestyle=':', linewidth=0.5, label=f'{height} m marker')
 
         plt.legend()
         file_path = os.path.join(self.results_dir, "ROIs.pdf")
         plt.savefig(file_path)
-
-
-
