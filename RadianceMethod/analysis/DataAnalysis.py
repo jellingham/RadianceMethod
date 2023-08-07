@@ -36,7 +36,8 @@ class DataAnalysis:
             os.path.join(self.results_dir, 'dark_roi_to_camera_real_distances.csv'), delimiter=',')
         self.camera_to_light_roi_real_distances = np.loadtxt(
             os.path.join(self.results_dir, 'light_roi_to_camera_real_distances.csv'), delimiter=',')
-        self.camera_to_roi_centre_real_distances = (self.camera_to_dark_roi_real_distances + self.camera_to_light_roi_real_distances) / 2
+        self.camera_to_roi_centre_real_distances = (
+                                                           self.camera_to_dark_roi_real_distances + self.camera_to_light_roi_real_distances) / 2
 
     def calc_intensities(self):
         for channel in self.channels_to_analyse:
@@ -60,5 +61,7 @@ class DataAnalysis:
             intensities_df = pd.read_csv(file_path, skiprows=2)
             intensities = intensities_df.iloc[:, 4:].to_numpy()
             extinction_coefficients = sigma(intensities, self.camera_to_roi_centre_real_distances)
+            extinction_coefficients_df = self.results_dict["light_roi_channel_0"].copy()
+            extinction_coefficients_df.iloc[:, 3:] = extinction_coefficients
             file_path = os.path.join(self.results_dir, f"extinction_coefficients_channel_{channel}.csv")
-            np.savetxt(file_path, extinction_coefficients, delimiter=',')
+            intensities_df.to_csv(file_path)

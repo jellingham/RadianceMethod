@@ -125,7 +125,7 @@ class DataExtractor:
 
     def _extract_pixel_values(self, image_array):
 
-        def calc_roi_mean_values(roi_pixel_coordinates, roi_pixel_dy):
+        def calc_roi_mean_values(image_array, roi_pixel_coordinates, roi_pixel_dy):
             roi_pixel_values = []
             for coord in roi_pixel_coordinates:
                 y_bottom = coord[1]
@@ -136,10 +136,10 @@ class DataExtractor:
                 roi_mean = roi.mean()
                 roi_pixel_values.append(roi_mean)
 
-                return roi_dark_values
+            return roi_pixel_values
 
-        roi_dark_values = calc_roi_mean_values(self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dy)
-        roi_light_values = calc_roi_mean_values(self.light_roi_pixel_coordinates, self.light_roi_pixel_dy)
+        roi_dark_values = calc_roi_mean_values(image_array, self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dy)
+        roi_light_values = calc_roi_mean_values(image_array, self.light_roi_pixel_coordinates, self.light_roi_pixel_dy)
 
         return roi_dark_values, roi_light_values
 
@@ -266,7 +266,7 @@ class DataExtractor:
                 light_marker_height = self.light_roi_pixel_coordinates[0][1] + height * (
                         self.light_roi_pixel_bounds[1][1] - self.light_roi_pixel_bounds[0][1]) / (
                                         self.light_roi_real_bounds[1][2] - self.light_roi_real_bounds[0][2])
-                plt.axhline(dark_marker_height, color='orange', linestyle=':', linewidth=0.5, label=f'{height} m marker (Dark)')
+                plt.axhline(dark_marker_height, color='orange', linestyle='--', linewidth=0.5, label=f'{height} m marker (Dark)')
                 plt.axhline(light_marker_height, color='yellow', linestyle=':', linewidth=0.5, label=f'{height} m marker (Light)')
 
         plt.legend()
