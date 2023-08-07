@@ -26,7 +26,7 @@ class DataAnalysis:
             for channel in self.channels_to_analyse:
                 file_path = os.path.join(self.results_dir,
                                          f'{self.experiment_name}_{cb_face}_values_channel_{channel}.csv')
-                self.results_dict[f"{cb_face}_roi_channel_{channel}"] = pd.read_csv(file_path, skiprows=2)
+                self.results_dict[f"{cb_face}_roi_channel_{channel}"] = pd.read_csv(file_path, header=[0,1,2], index_col=[0,1,2])
 
         self.dark_roi_real_coordinates = np.loadtxt(os.path.join(self.results_dir, 'roi_dark_coordinates.csv'),
                                                     delimiter=',')
@@ -44,24 +44,22 @@ class DataAnalysis:
             dark_results_df = self.results_dict[f"dark_roi_channel_{channel}"]
             light_results_df = self.results_dict[f"light_roi_channel_{channel}"]
 
-            n_s = dark_results_df.iloc[:, 3:] - light_results_df.iloc[:, 3:]
-            n_0 = dark_results_df.iloc[0, 3:] - light_results_df.iloc[0, 3:]
+            n_s = dark_results_df - light_results_df
+            n_0 = dark_results_df.iloc[0,:] - light_results_df.iloc[0,:]
             inteisities = n_s / n_0
             intensities_df = dark_results_df.copy()
-            intensities_df.iloc[:, 3:] = inteisities
-            roi_mean_heights = (self.dark_roi_real_coordinates[:, 2] + self.light_roi_real_coordinates[:, 2]) / 2
-            intensities_df.columns = [["ROI height", " ", "m"] + list(roi_mean_heights), intensities_df.columns]
+            intensities_df.iloc[:,:] = inteisities
             file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
             intensities_df.to_csv(file_path)
 
-    def calc_extinction_coefficients(self):  # TODO: Change form on how extinction coefficients are stored
+    def calc_extinction_coefficients(self):
         sigma = lambda intensity, distance: -1 * np.log(intensity) / distance
         for channel in self.channels_to_analyse:
             file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
-            intensities_df = pd.read_csv(file_path, skiprows=2)
-            intensities = intensities_df.iloc[:, 4:].to_numpy()
+            intensities_df = pd.read_csv(file_path, header=[0,1,2], index_col=[0,1,2])
+            intensities = intensities_df.to_numpy()
             extinction_coefficients = sigma(intensities, self.camera_to_roi_centre_real_distances)
             extinction_coefficients_df = self.results_dict["light_roi_channel_0"].copy()
-            extinction_coefficients_df.iloc[:, 3:] = extinction_coefficients
+            extinction_coefficients_df.iloc[:,:] = extinction_coefficients
             file_path = os.path.join(self.results_dir, f"extinction_coefficients_channel_{channel}.csv")
-            intensities_df.to_csv(file_path)
+            extinction_coefficients_df.to_csv(file_path)
