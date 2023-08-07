@@ -4,6 +4,34 @@ import pandas as pd
 import warnings
 
 class DataAnalysis:
+    """
+    A class for calculating intensities and axtinction coefficients based on the extracted experimental data.
+
+    Attributes:
+        results_dir (str or None): The directory path to store the analysis results.
+        results_dict (dict or None): A dictionary containing the experimental results for different channels and regions of interest (ROIs).
+        normalised_results_dict (dict or None): A dictionary containing normalised experimental results for different channels and ROIs.
+        dark_roi_real_coordinates (numpy.ndarray or None): An array containing the real-world coordinates of the dark region of interest (ROI).
+        light_roi_real_coordinates (numpy.ndarray or None): An array containing the real-world coordinates of the light region of interest (ROI).
+        camera_to_dark_roi_real_distances (numpy.ndarray or None): An array containing the distances between the camera and the dark ROI in the real world.
+        camera_to_light_roi_real_distances (numpy.ndarray or None): An array containing the distances between the camera and the light ROI in the real world.
+        camera_to_roi_centre_real_distances (numpy.ndarray or None): An array containing the distances between the camera and the ROI centers in the real world.
+        experiment_name (str or None): The name of the experiment.
+        channels_to_analyse (list): A list of integers representing the channels to be analyzed.
+
+    Methods:
+        set_channels_to_analyse(channels_to_analyse):
+            Set the list of channels to be analyzed.
+
+        load_result_data():
+            Load experimental results and ROI coordinates from files.
+
+        calc_intensities():
+            Calculate the intensities based on the experimental results and save them to CSV files.
+
+        calc_extinction_coefficients():
+            Calculate the extinction coefficients from the intensities and distances, and save them to CSV files.
+    """
     def __init__(self):
         self.results_dir = None
         self.results_dict = None

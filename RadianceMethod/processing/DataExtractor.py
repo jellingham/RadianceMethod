@@ -12,29 +12,120 @@ from RadianceMethod.helper_functions.image_reading import get_capture_date_time,
 
 
 class DataExtractor:
+    """
+    A class for extracting data from image files and performing calculations on ROIs (Regions of Interest).
+
+    Attributes:
+        dark_roi_pixel_dy (int): The height of the dark ROI in pixels.
+        dark_roi_real_dx (float): The horizontal distance between dark ROIs in real-world units.
+        image_dir (str): The directory where the image files are located.
+        image_file_format (str): The format of the image files ('jpg' or 'raw').
+        results_dir (str): The directory where the result files will be saved.
+        reference_image_id (int): The ID of the reference image used for time delta calculation.
+        first_image_id (int): The ID of the first image in the image series.
+        last_image_id (int): The ID of the last image in the image series.
+        skip_n_images (int): The number of images to skip when processing the image series.
+        image_name_string (str): The template string for forming image filenames with image IDs.
+        image_series (range): A range object containing the image IDs in the image series.
+        dark_roi_pixel_bounds (tuple): Tuple containing the lower and upper bounds of the dark ROI in pixels.
+        light_roi_pixel_bounds (tuple): Tuple containing the lower and upper bounds of the light ROI in pixels.
+        dark_roi_real_bounds (tuple): Tuple containing the lower and upper bounds of the dark ROI in real-world units.
+        light_roi_real_bounds (tuple): Tuple containing the lower and upper bounds of the light ROI in real-world units.
+        camera_real_position (numpy array): The real-world position of the camera (x, y, z).
+        number_of_rois (int): The number of ROIs to be calculated between the dark and light ROIs.
+        roi_pixel_width (int): The width of each ROI in pixels.
+        experiment_name (str): The name of the experiment for file naming purposes.
+        dark_roi_camera_real_distances (list): List containing the distances between the dark ROIs and the camera.
+        light_roi_camera_real_distances (list): List containing the distances between the light ROIs and the camera.
+        height_marker_heights (list): List of height marker heights in real-world units.
+
+    Methods:
+        set_image_series(first_image_id, last_image_id, skip_n_images=0):
+            Set the image series range for processing.
+
+        set_image_name_string(image_name_string):
+            Set the template string for forming image filenames with image IDs.
+
+        set_reference_image_id(reference_image_id):
+            Set the ID of the reference image used for time delta calculation.
+
+        set_image_dir(image_dir):
+            Set the directory where the image files are located.
+
+        set_image_file_format(image_file_format):
+            Set the format of the image files ('jpg' or 'raw').
+
+        set_results_dir(results_dir):
+            Set the directory where the result files will be saved.
+
+        set_height_marker_heights(height_marker_heights):
+            Set the list of height marker heights in real-world units.
+
+        set_dark_roi_pixel_bounds(lower_pixel_bound, upper_pixel_bound):
+            Set the pixel bounds for the dark ROI.
+
+        set_light_roi_pixel_bounds(lower_pixel_bound, upper_pixel_bound):
+            Set the pixel bounds for the light ROI.
+
+        set_dark_roi_real_bounds(lower_real_bound, upper_real_bound):
+            Set the real-world bounds for the dark ROI.
+
+        set_light_roi_real_bounds(lower_real_bound, upper_real_bound):
+            Set the real-world bounds for the light ROI.
+
+        set_roi_parameters(roi_pixel_width, number_of_rois):
+            Set the parameters for ROIs (pixel width and number of ROIs).
+
+        set_experiment_name(experiment_name):
+            Set the name of the experiment for file naming purposes.
+
+        set_camera_position(x, y, z):
+            Set the real-world position of the camera (x, y, z).
+
+        calc_geometrics():
+            Calculate the positions and distances of ROIs in both pixel and real-world units.
+
+        write_roi_real_coordinates():
+            Write the real-world coordinates of ROIs to CSV files.
+
+        write_roi_camera_to_roi_real_distances():
+            Write the distances between the camera and ROIs to CSV files.
+
+        process_image_data():
+            Process the image series, extract ROI values, and write the results to CSV files.
+
+        show_reference_image(channel, upscale=True):
+            Show the reference image for a specified channel with optional upscaling.
+
+        plot_reference_image_with_rois(channel=0, upscale=True, show_height_markers=True):
+            Plot the reference image with ROIs for a specified channel with optional upscaling and height markers.
+
+    """
+
+
     def __init__(self):
-        self.dark_roi_pixel_dy = None
-        self.dark_roi_real_dx = None
-        self.image_dir = None
-        self.image_file_format = 'jpg'
-        self.results_dir = None
-        self.reference_image_id = None
-        self.first_image_id = None
-        self.last_image_id = None
-        self.skip_n_images = None
-        self.image_name_string = None
-        self.image_series = None
-        self.dark_roi_pixel_bounds = None
-        self.light_roi_pixel_bounds = None
-        self.dark_roi_real_bounds = None
-        self.light_roi_real_bounds = None
-        self.camera_real_position = None
-        self.number_of_rois = None
-        self.roi_pixel_width = None
-        self.experiment_name = None
-        self.dark_roi_camera_real_distances = None
-        self.light_roi_camera_real_distances = None
-        self.height_marker_heights = None
+            self.dark_roi_pixel_dy = None
+            self.dark_roi_real_dx = None
+            self.image_dir = None
+            self.image_file_format = 'jpg'
+            self.results_dir = None
+            self.reference_image_id = None
+            self.first_image_id = None
+            self.last_image_id = None
+            self.skip_n_images = None
+            self.image_name_string = None
+            self.image_series = None
+            self.dark_roi_pixel_bounds = None
+            self.light_roi_pixel_bounds = None
+            self.dark_roi_real_bounds = None
+            self.light_roi_real_bounds = None
+            self.camera_real_position = None
+            self.number_of_rois = None
+            self.roi_pixel_width = None
+            self.experiment_name = None
+            self.dark_roi_camera_real_distances = None
+            self.light_roi_camera_real_distances = None
+            self.height_marker_heights = None
 
     def set_image_series(self, first_image_id, last_image_id, skip_n_images=0):
         self.first_image_id = first_image_id
