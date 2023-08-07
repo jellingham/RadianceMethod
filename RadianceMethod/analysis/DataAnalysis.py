@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-
+import warnings
 
 class DataAnalysis:
     def __init__(self):
@@ -26,8 +26,8 @@ class DataAnalysis:
             for channel in self.channels_to_analyse:
                 file_path = os.path.join(self.results_dir,
                                          f'{self.experiment_name}_{cb_face}_values_channel_{channel}.csv')
-                self.results_dict[f"{cb_face}_roi_channel_{channel}"] = pd.read_csv(file_path, header=[0,1,2],
-                                                                                    index_col=[0,1,2])
+                self.results_dict[f"{cb_face}_roi_channel_{channel}"] = pd.read_csv(file_path, header=[0, 1, 2],
+                                                                                    index_col=[0, 1, 2])
 
         self.dark_roi_real_coordinates = np.loadtxt(os.path.join(self.results_dir, 'roi_dark_coordinates.csv'),
                                                     delimiter=',')
@@ -46,21 +46,33 @@ class DataAnalysis:
             light_results_df = self.results_dict[f"light_roi_channel_{channel}"]
 
             n_s = dark_results_df - light_results_df
-            n_0 = dark_results_df.iloc[0,:] - light_results_df.iloc[0,:]
+            n_0 = dark_results_df.iloc[0, :] - light_results_df.iloc[0, :]
             inteisities = n_s / n_0
             intensities_df = dark_results_df.copy()
-            intensities_df.iloc[:,:] = inteisities
+            intensities_df.iloc[:, :] = inteisities
             file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
             intensities_df.to_csv(file_path)
 
     def calc_extinction_coefficients(self):
-        sigma = lambda intensity, distance: -1 * np.log(intensity) / distance
+        def calc_extinction_coefficients_from_intensities(intensity, distance):
+            sigma = -1 * np.log(intensity) / distance
+            if np.any(intensity < 0):
+                warnings.warn("Invalid intensity detected! Check the ROI pixel positions on the reference image.")
+                warnings.warn("Calculated extinction coefficient results may not be correct")
+            if np.any(self.camera_to_roi_centre_real_distances < 0):
+                warnings.warn("Invalid distance detected! Check the ROI real positions.")
+                warnings.warn("Calculated extinction coefficient results may not be correct")
+
+            return sigma
+
         for channel in self.channels_to_analyse:
             file_path = os.path.join(self.results_dir, f"intensities_channel_{channel}.csv")
-            intensities_df = pd.read_csv(file_path, header=[0,1,2], index_col=[0,1,2])
+            intensities_df = pd.read_csv(file_path, header=[0, 1, 2], index_col=[0, 1, 2])
             intensities = intensities_df.to_numpy()
-            extinction_coefficients = sigma(intensities, self.camera_to_roi_centre_real_distances)
+            extinction_coefficients = calc_extinction_coefficients_from_intensities(intensities, self.camera_to_roi_centre_real_distances)
+
+
             extinction_coefficients_df = self.results_dict["light_roi_channel_0"].copy()
-            extinction_coefficients_df.iloc[:,:] = extinction_coefficients
+            extinction_coefficients_df.iloc[:, :] = extinction_coefficients
             file_path = os.path.join(self.results_dir, f"extinction_coefficients_channel_{channel}.csv")
             extinction_coefficients_df.to_csv(file_path)

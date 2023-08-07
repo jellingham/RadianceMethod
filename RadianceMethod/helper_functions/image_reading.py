@@ -4,11 +4,14 @@ import rawpy
 import exifread
 from datetime import datetime
 
-def get_channel_arrays_from_jpg_file(file, channel):
-    channel_array = plt.imread(file)
-    return channel_array[:, :, channel]
 
-def get_channel_arrays_from_raw_file(file, channel):
+def get_channel_arrays_from_jpg_file(file):
+    image = plt.imread(file)
+    all_channel_array = np.rollaxis(image, -1)
+    return all_channel_array
+
+
+def get_channel_arrays_from_raw_file(file):
     with rawpy.imread(file) as raw:
         data = raw.raw_image_visible.copy()
         filter_array = raw.raw_colors_visible
@@ -20,8 +23,8 @@ def get_channel_arrays_from_raw_file(file, channel):
         channel_0_array = np.where(filter_array == 0, channel_array, 0)
         channel_1_array = np.where((filter_array == 1) | (filter_array == 3), channel_array, 0)
         channel_2_array = np.where(filter_array == 2, channel_array, 0)
-        all_channel_array = [channel_0_array, channel_1_array, channel_2_array]
-        return all_channel_array[channel]
+        all_channel_array = np.array([channel_0_array, channel_1_array, channel_2_array])
+        return all_channel_array
 
 
 def _get_exif_entry(filename, tag):

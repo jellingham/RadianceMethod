@@ -109,14 +109,16 @@ class DataExtractor:
                                                               self.camera_real_position)
             self.light_roi_camera_real_distances.append(light_roi_camera_real_distance)
 
-    def _get_image_data(self, image_id, channel):
+    def _get_image_data(self, image_id, channel='all'):
         file_path = self._get_image_file_path(image_id)
         image_array = None
         if self.image_file_format == 'jpg':
-            image_array = get_channel_arrays_from_jpg_file(file_path, channel)
+            image_array = get_channel_arrays_from_jpg_file(file_path)
         elif self.image_file_format == 'raw':
-            image_array = get_channel_arrays_from_raw_file(file_path, channel)
-        return image_array
+            image_array = get_channel_arrays_from_raw_file(file_path)
+        if channel == 'all':
+            return image_array
+        return image_array[channel]
 
     def _get_image_file_path(self, image_id):
         filename = self.image_name_string.format(image_id)
@@ -162,47 +164,48 @@ class DataExtractor:
         self.image_series = range(self.first_image_id, self.last_image_id, self.skip_n_images + 1)
         print(f"Processing {self.last_image_id - self.first_image_id} images...")
 
-        channels = [0, 1, 2]
-
-        for channel in channels:
+        reference_image_file_path = self._get_image_file_path(self.reference_image_id)
+        reference_image_capture_time = get_capture_date_time(reference_image_file_path)
+        
+        for channel in range(3):
             dark_file_path = os.path.join(self.results_dir, f'{self.experiment_name}_dark_values_channel_{channel}.csv')
-            light_file_path = os.path.join(self.results_dir,
-                                           f'{self.experiment_name}_light_values_channel_{channel}.csv')
+            light_file_path = os.path.join(self.results_dir, f'{self.experiment_name}_light_values_channel_{channel}.csv')
+            self._create_roi_value_file(dark_file_path, self.dark_roi_real_coordinates, self.dark_roi_real_dz, self.dark_roi_camera_real_distances)
+            self._create_roi_value_file(light_file_path, self.light_roi_real_coordinates, self.light_roi_real_dz, self.light_roi_camera_real_distances)
+            print(f"Channel {channel} ROI value files created!")
 
-            self._process_channel_data(channel, self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dy, self.dark_roi_real_coordinates, self.dark_roi_real_dz, self.dark_roi_camera_real_distances, dark_file_path)
-            self._process_channel_data(channel, self.light_roi_pixel_coordinates, self.light_roi_pixel_dy, self.light_roi_real_coordinates, self.light_roi_real_dz, self.light_roi_camera_real_distances, light_file_path)
+        print("Processing images...")
+        for image_id in tqdm(self.image_series):
+            all_channel_image_array = self._get_image_data(image_id)
+            image_file_path = self._get_image_file_path(image_id)
+            capture_time = get_capture_date_time(image_file_path)
+            time_delta = capture_time - reference_image_capture_time
+
+            for channel in range(3):
+                image_array = all_channel_image_array[channel]
+                dark_file_path = os.path.join(self.results_dir, f'{self.experiment_name}_dark_values_channel_{channel}.csv')
+                light_file_path = os.path.join(self.results_dir, f'{self.experiment_name}_light_values_channel_{channel}.csv')
+                dark_roi_pixel_values = self._extract_pixel_values(image_array, self.dark_roi_pixel_coordinates, self.dark_roi_pixel_dy)
+                light_roi_pixel_values = self._extract_pixel_values(image_array, self.light_roi_pixel_coordinates, self.light_roi_pixel_dy)
+                self._write_roi_values_to_file(dark_file_path, image_id, capture_time, time_delta, dark_roi_pixel_values)
+                self._write_roi_values_to_file(light_file_path, image_id, capture_time, time_delta, light_roi_pixel_values)
 
         print("All images processed!")
 
-    def _process_channel_data(self, channel, roi_pixel_coordinates, roi_pixel_dy,  roi_real_coordinates, roi_real_dz, roi_camera_real_distances, file_path):
+    def _create_roi_value_file(self, file_path, roi_real_coordinates, roi_real_dz, roi_camera_real_distances):
         with open(file_path, 'w') as csvfile:
             writer = csv.writer(csvfile)
+            writer.writerow( ["ROI height [m]", "", ""] + list(roi_real_coordinates[:, 2] + roi_real_dz / 2))
+            writer.writerow(["Camera to ROI real distances [m]", "", ""] + list(roi_camera_real_distances))
+            writer.writerow(["", "", ""] + [f"ROI {i}" for i in range(self.number_of_rois)])
+            writer.writerow(["Image ID", "Time", "Timedelta"])
+            
+    def _write_roi_values_to_file(self, file_path, image_id, capture_time, time_delta, roi_values):
+        with open(file_path, 'a') as csvfile:
+            writer = csv.writer(csvfile)
+            data_row = [image_id, capture_time, time_delta] + roi_values
+            writer.writerow(data_row)
 
-            header_1 = ["ROI height [m]", "", ""] + list(roi_real_coordinates[:, 2] + roi_real_dz / 2)
-            header_2 = ["Camera to ROI real distances [m]", "", ""] + list(roi_camera_real_distances)
-            header_3 = ["", "", ""] + [f"ROI {i}" for i in range(self.number_of_rois)]
-            header_4 = ["Image ID", "Time", "Timedelta"]
-
-            writer.writerow(header_1)
-            writer.writerow(header_2)
-            writer.writerow(header_3)
-            writer.writerow(header_4)
-
-            reference_image_file_path = self._get_image_file_path(self.reference_image_id)
-            reference_image_capture_time = get_capture_date_time(reference_image_file_path)
-
-            for image_id in tqdm(self.image_series):
-                image_array = self._get_image_data(image_id, channel)
-                image_file_path = self._get_image_file_path(image_id)
-                capture_time = get_capture_date_time(image_file_path)
-                time_delta = capture_time - reference_image_capture_time
-
-                roi_values = self._extract_pixel_values(image_array, roi_pixel_coordinates, roi_pixel_dy)
-                data_row = [image_id, capture_time, time_delta] + roi_values
-                writer.writerow(data_row)
-
-            time.sleep(0.1)
-            print(f"Channel {channel} processed!")
 
     def show_reference_image(self, channel, upscale=True):
         image_array = self._get_image_data(self.reference_image_id, channel)
