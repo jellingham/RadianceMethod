@@ -26,7 +26,8 @@ class DataAnalysis:
             for channel in self.channels_to_analyse:
                 file_path = os.path.join(self.results_dir,
                                          f'{self.experiment_name}_{cb_face}_values_channel_{channel}.csv')
-                self.results_dict[f"{cb_face}_roi_channel_{channel}"] = pd.read_csv(file_path, header=[0,1,2], index_col=[0,1,2])
+                self.results_dict[f"{cb_face}_roi_channel_{channel}"] = pd.read_csv(file_path, header=[0,1,2],
+                                                                                    index_col=[0,1,2])
 
         self.dark_roi_real_coordinates = np.loadtxt(os.path.join(self.results_dir, 'roi_dark_coordinates.csv'),
                                                     delimiter=',')
@@ -36,8 +37,8 @@ class DataAnalysis:
             os.path.join(self.results_dir, 'dark_roi_to_camera_real_distances.csv'), delimiter=',')
         self.camera_to_light_roi_real_distances = np.loadtxt(
             os.path.join(self.results_dir, 'light_roi_to_camera_real_distances.csv'), delimiter=',')
-        self.camera_to_roi_centre_real_distances = (
-                                                           self.camera_to_dark_roi_real_distances + self.camera_to_light_roi_real_distances) / 2
+        self.camera_to_roi_centre_real_distances = (self.camera_to_dark_roi_real_distances +
+                                                    self.camera_to_light_roi_real_distances) / 2
 
     def calc_intensities(self):
         for channel in self.channels_to_analyse:

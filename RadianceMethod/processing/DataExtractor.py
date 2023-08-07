@@ -178,13 +178,15 @@ class DataExtractor:
         with open(file_path, 'w') as csvfile:
             writer = csv.writer(csvfile)
 
-            header_1 = ["ROI height", "", "m"] + list(roi_real_coordinates[:, 2] + roi_real_dz / 2)
-            header_2 = ["Camera to ROI real distances", "", "m"] + list(roi_camera_real_distances)
-            header_3 = ["Image ID", "Time", "Timedelta"] + [f"ROI {i}" for i in range(self.number_of_rois)]
+            header_1 = ["ROI height [m]", "", ""] + list(roi_real_coordinates[:, 2] + roi_real_dz / 2)
+            header_2 = ["Camera to ROI real distances [m]", "", ""] + list(roi_camera_real_distances)
+            header_3 = ["", "", ""] + [f"ROI {i}" for i in range(self.number_of_rois)]
+            header_4 = ["Image ID", "Time", "Timedelta"]
 
             writer.writerow(header_1)
             writer.writerow(header_2)
             writer.writerow(header_3)
+            writer.writerow(header_4)
 
             reference_image_file_path = self._get_image_file_path(self.reference_image_id)
             reference_image_capture_time = get_capture_date_time(reference_image_file_path)
