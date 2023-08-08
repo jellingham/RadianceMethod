@@ -48,6 +48,7 @@ class DataAnalysis:
         self.channels_to_analyse = channels_to_analyse
 
     def load_result_data(self):
+        print("Loading extracted image data...")
         self.results_dict = {}
 
         for cb_face in ["dark", "light"]:
@@ -69,6 +70,7 @@ class DataAnalysis:
                                                     self.camera_to_light_roi_real_distances) / 2
 
     def calc_intensities(self):
+        print("Calculating intensities...")
         for channel in self.channels_to_analyse:
             dark_results_df = self.results_dict[f"dark_roi_channel_{channel}"]
             light_results_df = self.results_dict[f"light_roi_channel_{channel}"]
@@ -82,6 +84,7 @@ class DataAnalysis:
             intensities_df.to_csv(file_path)
 
     def calc_extinction_coefficients(self):
+        print("Calculating extinction coefficients...")
         def calc_extinction_coefficients_from_intensities(intensity, distance):
             sigma = -1 * np.log(intensity) / distance
             if np.any(intensity < 0):
