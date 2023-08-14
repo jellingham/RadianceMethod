@@ -35,6 +35,9 @@ class DataAnalysis:
         set_channels_to_analyse(channels_to_analyse):
             Set the list of channels to be analyzed.
 
+        set_baseline_image_bounds(baseline_image_bounds):
+            Set the list of first and last image that are use for normalization.
+
         load_result_data():
             Load experimental results and ROI coordinates from files.
 
