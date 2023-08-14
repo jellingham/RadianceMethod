@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib import patches
+import matplotlib.gridspec as gridspec
 import csv
 from tqdm import tqdm
 
@@ -306,15 +307,22 @@ class DataExtractor:
             plt.close()
             exit()
 
+        fig = plt.figure(figsize=(6, 6))
+        gs = gridspec.GridSpec(2, 1, height_ratios=[10, 1])
+
+        ax = plt.subplot(gs[0])
         image_array = self._get_image_data(self.reference_image_id, channel)
         if upscale:
-            plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
+            ax.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
         else:
-            plt.imshow(image_array, cmap='gray')
+            ax.imshow(image_array, cmap='gray')
+
+        ax_button = plt.subplot(gs[1])
+        ax_button.axis('off')  # turn off the axis
 
         axcolor = 'lightgoldenrodyellow'
-        proceed_ax = plt.axes([0.7, 0.05, 0.1, 0.075], facecolor=axcolor)
-        exit_ax = plt.axes([0.81, 0.05, 0.1, 0.075], facecolor=axcolor)
+        proceed_ax = fig.add_axes([0.7, 0.02, 0.1, 0.05], facecolor=axcolor)
+        exit_ax = fig.add_axes([0.81, 0.02, 0.1, 0.05], facecolor=axcolor)
 
         b_next = Button(proceed_ax, 'Proceed', color='green', hovercolor='yellowgreen')
         b_exit = Button(exit_ax, 'Exit', color='red', hovercolor='salmon')
@@ -322,6 +330,7 @@ class DataExtractor:
         b_next.on_clicked(close_figure)
         b_exit.on_clicked(exit_program)
 
+        plt.tight_layout()
         plt.show()
 
 
