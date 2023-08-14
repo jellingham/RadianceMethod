@@ -1,7 +1,7 @@
 import os
-import time
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
 from matplotlib import patches
 import csv
 from tqdm import tqdm
@@ -297,14 +297,33 @@ class DataExtractor:
             data_row = [image_id, capture_time, time_delta] + roi_values
             writer.writerow(data_row)
 
-
     def show_reference_image(self, channel, upscale=True):
+
+        def close_figure(event):
+            plt.close()
+
+        def exit_program(event):
+            plt.close()
+            exit()
+
         image_array = self._get_image_data(self.reference_image_id, channel)
         if upscale:
             plt.imshow(image_array, cmap='gray', vmax=np.percentile(image_array, 99))
         else:
             plt.imshow(image_array, cmap='gray')
+
+        axcolor = 'lightgoldenrodyellow'
+        proceed_ax = plt.axes([0.7, 0.05, 0.1, 0.075], facecolor=axcolor)
+        exit_ax = plt.axes([0.81, 0.05, 0.1, 0.075], facecolor=axcolor)
+
+        b_next = Button(proceed_ax, 'Proceed', color='green', hovercolor='yellowgreen')
+        b_exit = Button(exit_ax, 'Exit', color='red', hovercolor='salmon')
+
+        b_next.on_clicked(close_figure)
+        b_exit.on_clicked(exit_program)
+
         plt.show()
+
 
     def plot_reference_image_with_rois(self, channel=0, upscale=True, show_height_markers=True):
         def draw_roi(x_pos, y_pos, width, height, color, label):
